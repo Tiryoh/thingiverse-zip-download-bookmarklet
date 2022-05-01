@@ -44,7 +44,7 @@ jobs:
           rsync -av --delete --exclude '.*' --exclude '*.py' ${GITHUB_WORKSPACE}/source/ ${GITHUB_WORKSPACE}/dist
           cd ${GITHUB_WORKSPACE}/dist
           # exit if nothing to commit
-          git status | grep "nothing" && echo "Nothing to 'git commit'" && ls -la && exit 0
+          git status | grep "working tree clean" && echo "Nothing to 'git commit'" && ls -la && exit 0
           # commit updated files
           git add -A
           git commit -m "deploy: ${HASH}"
