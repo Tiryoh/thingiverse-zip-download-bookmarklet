@@ -1,0 +1,51 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          fetch-depth: '0'
+          path: 'source'
+
+      - name: Checkout dist
+        uses: actions/checkout@v3
+        with:
+          ref: gh-pages
+          fetch-depth: '0'
+          path: 'dist'
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: pip install
+        run: pip install -r ${GITHUB_WORKSPACE}/source/.github/scripts/requirements.txt
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "action@github.com"
+
+      - name: Clone & Sync & Generate & Push
+        run: |
+          cd ${GITHUB_WORKSPACE}/source
+          HASH=`git rev-parse --short HEAD`
+          python3 .github/scripts/deploy.py
+          rsync -av --delete --exclude '.*' --exclude '*.py' ${GITHUB_WORKSPACE}/source/ ${GITHUB_WORKSPACE}/dist
+          cd ${GITHUB_WORKSPACE}/dist
+          # exit if nothing to commit
+          git status | grep "nothing" && echo "Nothing to 'git commit'" && ls -la && exit 0
+          # commit updated files
+          git add -A
+          git commit -m "deploy: ${HASH}"
+          git push -q origin gh-pages
